@@ -32,6 +32,7 @@ func Parse(r io.Reader, format string) (any, error) {
 		parsingData, err = parseJSON(data)
 	}
 	if format == YAML {
+		parsingData, err = parseYAML(data)
 	}
 
 	if err != nil {
