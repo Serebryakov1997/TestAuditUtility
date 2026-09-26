@@ -8,12 +8,13 @@ import (
 )
 
 const (
+	Auto string = "auto"
 	JSON string = "json"
 	YAML string = "yaml"
 )
 
 func Parse(r io.Reader, format string) (any, error) {
-	if format != JSON && format != YAML {
+	if format != Auto && format != JSON && format != YAML {
 		return nil, errors.New("unsupported format")
 	}
 
@@ -24,6 +25,14 @@ func Parse(r io.Reader, format string) (any, error) {
 	data = bytes.TrimSpace(data)
 	if len(data) == 0 {
 		return nil, errors.New("empty config")
+	}
+
+	if format == Auto {
+		if data[0] == '{' || data[0] == '[' {
+			format = JSON
+		} else {
+			format = YAML
+		}
 	}
 
 

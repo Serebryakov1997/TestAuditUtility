@@ -30,6 +30,8 @@ func TestParseValidData(t *testing.T) {
 		{"empty YAML object", `{}`, YAML},
 		{"JSON array config", `[{"debug":true}]`, JSON},
 		{"YAML array config", "- debug: true", YAML},
+		{"auto JSON", "\n{\"debug\":true} ", Auto},
+		{"auto YAML", "a: 1", Auto},
 	}
 
 	for _, tc := range cases {
@@ -47,7 +49,7 @@ func TestParseInvalidData(t *testing.T) {
 		input string
 		format string
 	}{
-		{"empty", " \n", JSON},
+		{"empty", " \n", Auto},
 		{"JSON broken", `{"password":"secret"`, JSON},
 		{"JSON duplicate", `{"level":"debug", "level":"info"}`, JSON},
 		{"JSON scalar", `50`, JSON},
@@ -59,6 +61,8 @@ func TestParseInvalidData(t *testing.T) {
 		{"YAML extra document", "version: 1.2\n---\ndebug: true", YAML},
 		{"YAML scalar", "secret", YAML},
 		{"YAML empty document", "---", YAML},
+		{"auto no fallback", "{a: 1}", Auto},
+		{"unsupported format", `{}`, "xml"},
 	}
 
 	for _, tc := range cases {
