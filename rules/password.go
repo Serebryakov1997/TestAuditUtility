@@ -7,7 +7,7 @@ import (
 	"github.com/serebryakov1997/utility/audit"
 )
 
-var regChecking = regexp.MustCompile(`^\$\{A-Za-z_[A-Za-z0-9_]*\}$`)
+var regChecking = regexp.MustCompile(`^\$\{[A-Za-z_][A-Za-z0-9_]*\}$`)
 
 type PasswordRule struct{}
 

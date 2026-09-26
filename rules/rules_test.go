@@ -62,3 +62,25 @@ func TestRules(t *testing.T) {
 		})
 	}
 }
+
+func TestNoFindings(t *testing.T) {
+	inputs := []string{
+		`{}`,
+		`{"log":{"level":"info"},"debug":false}`,
+		`{"game":{"level":"debug"}}`,
+		`{"password":"${DB_PASSWORD}"}`,
+		`{"password":""}`,
+		`{"storage":{"digest-algorithm":"SHA256"}}`,
+		`{"host":"127.0.0.1","listen":"127.0.0.1:8080"}`,
+		`{"tls":{"enabled":true, "verify":true}}`,
+		`{"file_mode":"0644"}`,
+	}
+
+	for _, input := range inputs {
+		t.Run(input, func(t *testing.T) {
+			if got := analyze(t, input, config.JSON); len(got) != 0 {
+				t.Fatalf("false alarm: %+v", got)
+			}
+		})
+	}
+}

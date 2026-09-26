@@ -42,8 +42,14 @@ func boolean(value any) (bool, bool) {
 // owner return nearest parent field, 
 // skip indexes of array and this field
 func owner(node audit.Node) string {
+	skippedField := false
 	for i := len(node.Path)-1; i >= 0; i-- {
 		if node.Path[i].IsIndex {
+			continue
+		}
+
+		if !skippedField {
+			skippedField = true
 			continue
 		}
 
