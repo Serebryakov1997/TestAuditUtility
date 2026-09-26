@@ -14,11 +14,18 @@ type PasswordRule struct{}
 func (PasswordRule) ID() string { return "plaintext-password" }
 
 func (r PasswordRule) Check(node audit.Node) []audit.Finding {	
+	key := normalize(node.Key)
+	if !(oneOf(key, "password", "passwd") || 
+		strings.HasSuffix(key, "password") || strings.HasSuffix(key, "passwd")) {
+		return nil
+	}
+
 	switch v := node.Value.(type) {
 	case string:
 		if strings.TrimSpace(v) == "" || regChecking.MatchString(v) {
 			return nil
 		}
+	case float64:
 	default:
 		return nil
 	}
