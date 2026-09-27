@@ -1,0 +1,63 @@
+name: Go CI
+
+on:
+  pull_request:
+    branches: [develop]
+  push:
+    branches: [develop]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Go checks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Set up Go
+        uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Show Go version
+        run: go version
+
+      - name: Check formatting
+        run: |
+          files=$(gofmt -l .)
+
+          if [ -n "$files" ]; then
+            echo "These files need gofmt:"
+            printf '%s\n' "$files"
+            exit 1
+          fi
+
+      - name: Download dependencies
+        run: go mod download
+
+      - name: Verify dependencies
+        run: go mod verify
+
+      - name: Static analysis
+        run: go vet ./...
+
+      - name: Run tests
+        env:
+          CGO_ENABLED: '1'
+        run: go test -race -count=1 -timeout=5m -cover ./...
+
+      - name: Build
+        run: go build ./...
