@@ -21,9 +21,9 @@ func TestParseNeedFormats(t *testing.T) {
 }
 
 func TestParseValidData(t *testing.T) {
-	cases := []struct{
-		name string
-		input string
+	cases := []struct {
+		name   string
+		input  string
 		format string
 	}{
 		{"empty JSON object", `{}`, JSON},
@@ -44,9 +44,9 @@ func TestParseValidData(t *testing.T) {
 }
 
 func TestParseInvalidData(t *testing.T) {
-	cases := []struct{
-		name string
-		input string
+	cases := []struct {
+		name   string
+		input  string
 		format string
 	}{
 		{"empty", " \n", Auto},

@@ -6,9 +6,8 @@ import (
 	"github.com/serebryakov1997/utility/config"
 )
 
-
 func TestParseArgs(t *testing.T) {
-	cases := []struct{
+	cases := []struct {
 		name string
 		args []string
 		want options

@@ -9,11 +9,11 @@ import (
 )
 
 func TestRunStdin(t *testing.T) {
-	cases := []struct{
-		name string
-		args []string
-		input string
-		code int
+	cases := []struct {
+		name     string
+		args     []string
+		input    string
+		code     int
 		fragment string
 	}{
 		{"safe", []string{"--stdin"}, `{}`, ExitOK, "Not found problems"},
@@ -54,8 +54,8 @@ func TestRunStdin(t *testing.T) {
 
 func TestRunFile(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "file.json")
-	
-	err := os.WriteFile(path, []byte(`{"password":"test_password"}`), 0600);
+
+	err := os.WriteFile(path, []byte(`{"password":"test_password"}`), 0600)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -70,7 +70,7 @@ func TestRunFile(t *testing.T) {
 func TestRunMissingFile(t *testing.T) {
 	var out, errOut bytes.Buffer
 	path := filepath.Join(t.TempDir(), "missing.json")
-	
+
 	code := Run([]string{path, "-s"}, strings.NewReader(""), &out, &errOut)
 	if code != ExitError {
 		t.Fatalf("code=%d", code)

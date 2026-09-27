@@ -11,9 +11,9 @@ import (
 )
 
 const (
-	ExitOK = 0
+	ExitOK       = 0
 	ExitFindings = 1
-	ExitError = 2
+	ExitError    = 2
 )
 
 func Run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {

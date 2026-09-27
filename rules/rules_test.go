@@ -24,10 +24,10 @@ func analyze(t *testing.T, input, format string) []audit.Finding {
 
 func TestRules(t *testing.T) {
 	cases := []struct {
-		name string
-		input string
-		id string
-		path string
+		name     string
+		input    string
+		id       string
+		path     string
 		severity string
 	}{
 		{"debug bool", `{"debug":true}`, "debug-enabled", "$.debug", audit.Low},

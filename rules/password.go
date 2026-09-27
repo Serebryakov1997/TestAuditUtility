@@ -13,9 +13,9 @@ type PasswordRule struct{}
 
 func (PasswordRule) ID() string { return "plaintext-password" }
 
-func (r PasswordRule) Check(node audit.Node) []audit.Finding {	
+func (r PasswordRule) Check(node audit.Node) []audit.Finding {
 	key := normalize(node.Key)
-	if !(oneOf(key, "password", "passwd") || 
+	if !(oneOf(key, "password", "passwd") ||
 		strings.HasSuffix(key, "password") || strings.HasSuffix(key, "passwd")) {
 		return nil
 	}

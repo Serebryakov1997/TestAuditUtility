@@ -35,7 +35,6 @@ func Parse(r io.Reader, format string) (any, error) {
 		}
 	}
 
-
 	var parsingData any
 	if format == JSON {
 		parsingData, err = parseJSON(data)

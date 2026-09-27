@@ -9,7 +9,7 @@ import (
 
 type BindRule struct{}
 
-func (BindRule) ID() string {return "all-interfaces"}
+func (BindRule) ID() string { return "all-interfaces" }
 
 func (r BindRule) Check(node audit.Node) []audit.Finding {
 	if !oneOf(normalize(node.Key), "host", "bind", "listen", "address") {

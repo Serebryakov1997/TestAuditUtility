@@ -16,8 +16,8 @@ func writeReport(w io.Writer, findings []audit.Finding) error {
 	for _, f := range findings {
 		if _, err := fmt.Fprintf(w, "%s %s [%s]\n%s\nRecommendation: %s\n\n",
 			f.Severity, f.Path, f.RuleID, f.Message, f.Recommendation); err != nil {
-				return err
-			}
+			return err
+		}
 	}
 
 	_, err := fmt.Fprintf(w, "Found problems: %d\n", len(findings))

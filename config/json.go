@@ -9,7 +9,7 @@ import (
 
 func parseJSON(data []byte) (any, error) {
 	decode := json.NewDecoder(bytes.NewReader(data))
-	
+
 	config, err := jsonValue(decode)
 	if err != nil {
 		return nil, err

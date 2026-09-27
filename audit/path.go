@@ -7,8 +7,8 @@ import (
 
 // Segment save source key or index. Key "a.b" not equal path a -> b.
 type Segment struct {
-	Key string
-	Index int
+	Key     string
+	Index   int
 	IsIndex bool
 }
 

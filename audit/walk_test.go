@@ -7,11 +7,11 @@ import (
 func TestWalkPaths(t *testing.T) {
 	root := map[string]any{
 		"services": []any{map[string]any{"debug": true}},
-		"a.b": map[string]any{"": 1},
+		"a.b":      map[string]any{"": 1},
 	}
 
 	var paths []string
-	err := Walk(Node{Value: root}, 
+	err := Walk(Node{Value: root},
 		func(n Node) { paths = append(paths, n.Path.String()) })
 	if err != nil {
 		t.Fatal(err)

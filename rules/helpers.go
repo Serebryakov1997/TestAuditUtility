@@ -39,11 +39,11 @@ func boolean(value any) (bool, bool) {
 	return false, false
 }
 
-// owner return nearest parent field, 
+// owner return nearest parent field,
 // skip indexes of array and this field
 func owner(node audit.Node) string {
 	skippedField := false
-	for i := len(node.Path)-1; i >= 0; i-- {
+	for i := len(node.Path) - 1; i >= 0; i-- {
 		if node.Path[i].IsIndex {
 			continue
 		}
@@ -60,10 +60,10 @@ func owner(node audit.Node) string {
 
 func finding(node audit.Node, id, severity, message, advice string) []audit.Finding {
 	return []audit.Finding{{
-		RuleID: id,
-		Severity: severity,
-		Path: node.Path.String(),
-		Message: message,
+		RuleID:         id,
+		Severity:       severity,
+		Path:           node.Path.String(),
+		Message:        message,
 		Recommendation: advice,
 	}}
 }

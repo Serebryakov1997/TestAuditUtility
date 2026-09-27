@@ -11,13 +11,13 @@ type AlgorithmRule struct{}
 func (AlgorithmRule) ID() string { return "weak-algorithm" }
 
 var weakAlgorithms = map[string]string{
-	"md4": "MD4",
-	"md5": "MD5",
-	"sha1": "SHA-1",
-	"des": "DES",
-	"3des": "3DES",
+	"md4":       "MD4",
+	"md5":       "MD5",
+	"sha1":      "SHA-1",
+	"des":       "DES",
+	"3des":      "3DES",
 	"tripledes": "3DES",
-	"rc4": "RC4",
+	"rc4":       "RC4",
 }
 
 func (r AlgorithmRule) Check(node audit.Node) []audit.Finding {
@@ -33,5 +33,5 @@ func (r AlgorithmRule) Check(node audit.Node) []audit.Finding {
 
 	return finding(node, r.ID(), audit.High,
 		fmt.Sprintf("Set unsafed algorithm %s.", name),
-		"Choose modern strong algorithm.")	
+		"Choose modern strong algorithm.")
 }

@@ -8,10 +8,10 @@ import (
 )
 
 type options struct {
-	path string
-	stdin bool
+	path   string
+	stdin  bool
 	silent bool
-	help bool
+	help   bool
 	format string
 }
 
