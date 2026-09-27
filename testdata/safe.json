@@ -1,0 +1,7 @@
+{
+  "log": { "level": "info" },
+  "password": "${DB_PASSWORD}",
+  "host": "127.0.0.1",
+  "tls": { "enabled": true, "verify": true },
+  "storage": { "digest-algorithm": "SHA256", "file_mode": "0600" }
+}

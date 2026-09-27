@@ -1,0 +1,10 @@
+log:
+  level: debug
+password: test-password
+host: 0.0.0.0
+tls:
+  enabled: false
+  verify: false
+storage:
+  digest-algorithm: MD5
+  file_mode: '0777'
