@@ -173,6 +173,151 @@ gofmt -w .
 
 `./...` охватывает корневой пакет и вложенные пакеты текущего модуля. Вложенные модули с отдельными `go.mod` требуют отдельного запуска.
 
+## REST API
+
+### Запуск сервера
+
+Из корня репозитория:
+
+```bash
+go run ./cmd/audit-file serve -addr 127.0.0.1:9090
+```
+
+Или после сборки:
+
+```bash
+go build -o audit-file ./cmd/audit-file
+./audit-file serve -addr 127.0.0.1:9090
+```
+
+Подкоманда `serve` запускает HTTP-сервер, а флаг `-addr` задаёт адрес и порт. Во всех примерах ниже используется `127.0.0.1:9090`. Для остановки нажмите Ctrl+C. Сервер пытается завершить активные запросы в течение 10 секунд, затем закрывает оставшиеся соединения.
+
+При изменении исходного кода сервер нужно перезапустить. Если используется собранный бинарный файл, сначала пересоберите его.
+
+### Проверка конфигурации
+
+```text
+POST /api/v1/audit
+```
+
+В теле запроса передаётся исходная JSON- или YAML-конфигурация. JSON-обёртка, путь к файлу на сервере и `multipart/form-data` не используются. Корневое значение конфигурации должно быть объектом или массивом.
+
+Формат определяется заголовком `Content-Type`:
+
+| Content-Type         | Формат |
+| -------------------- | ------ |
+| `application/json`   | JSON   |
+| `application/yaml`   | YAML   |
+| `application/x-yaml` | YAML   |
+| `text/yaml`          | YAML   |
+
+Допускаются параметры заголовка, например `application/json; charset=utf-8`. Формат ответа всегда JSON.
+
+### JSON из командной строки
+
+```bash
+curl -i http://127.0.0.1:9090/api/v1/audit \
+  -H 'Content-Type: application/json' \
+  --data-binary '{"debug":true}'
+```
+
+Флаг `-i` показывает HTTP-статус и заголовки. `--data-binary` передаёт тело без преобразований и выбирает метод POST.
+
+Пример ответа со статусом `200 OK`:
+
+```json
+[
+  {
+    "rule_id": "debug-enabled",
+    "severity": "LOW",
+    "path": "$.debug",
+    "message": "Debug is enabled.",
+    "recommendation": "Disable debug in work environment"
+  }
+]
+```
+
+### Конфигурация из файла
+
+JSON:
+
+```bash
+curl -i http://127.0.0.1:9090/api/v1/audit \
+  -H 'Content-Type: application/json' \
+  --data-binary @config.json
+```
+
+YAML:
+
+```bash
+curl -i http://127.0.0.1:9090/api/v1/audit \
+  -H 'Content-Type: application/yaml' \
+  --data-binary @config.yaml
+```
+
+Префикс `@` означает чтение файла и подставляет его содержимое.
+
+### Ответ без найденных уязвимостей
+
+```bash
+curl -i http://127.0.0.1:9090/api/v1/audit \
+  -H 'Content-Type: application/json' \
+  --data-binary '{"debug":false}'
+```
+
+Ожидаемый ответ — `200 OK` и пустой массив:
+
+```json
+[]
+```
+
+Наличие уязвимостей также возвращает `200`: анализ успешно выполнен, а проблемы описаны в теле ответа. Код ошибки при завершении утилиты не переносится на статус ответа REST API; флаг `--silent` для API не требуется.
+
+### Ошибки API
+
+| Статус                       | Причина                                                     |
+| ---------------------------- | ----------------------------------------------------------- |
+| `200 OK`                     | Конфигурация успешно проверена                              |
+| `400 Bad Request`            | Пустое тело, ошибка чтения или некорректная конфигурация    |
+| `404 Not Found`              | Неизвестный путь                                            |
+| `405 Method Not Allowed`     | Для endpoint использован метод, отличный от POST            |
+| `415 Unsupported Media Type` | Content-Type отсутствует, некорректен или не поддерживается |
+| `500 Internal Server Error`  | Внутренняя ошибка анализа или сериализации                  |
+
+Ошибки возвращаются объектом JSON с полем `error`.
+
+Некорректный JSON:
+
+```bash
+curl -i http://127.0.0.1:9090/api/v1/audit \
+  -H 'Content-Type: application/json' \
+  --data-binary '{"debug":'
+```
+
+Ожидаемый статус — `400 Bad Request`:
+
+```json
+{ "error": "invalid configuration" }
+```
+
+Метод не поддерживается:
+
+```bash
+curl -i http://127.0.0.1:9090/api/v1/audit
+```
+
+Ожидается `405 Method Not Allowed` с заголовком `Allow: POST`.
+
+Формат не поддерживается:
+
+```bash
+curl -i http://127.0.0.1:9090/api/v1/audit \
+  -H 'Content-Type: text/plain' \
+  --data-binary 'debug=true'
+```
+
+Ожидается `415 Unsupported Media Type`.
+
 ## Пайплайн тестирования
 
 Конфигурация пайплайна: `.github/workflows/ci.yml`.
