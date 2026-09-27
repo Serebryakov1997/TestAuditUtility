@@ -16,7 +16,7 @@ func (r DebugRule) Check(node audit.Node) []audit.Finding {
 		if enabled, ok := boolean(node.Value); ok && enabled {
 			return finding(node, r.ID(), audit.Low,
 				"Debug is enabled.",
-				"Disabled debug in work environment")
+				"Disable debug in work environment")
 		}
 	}
 
