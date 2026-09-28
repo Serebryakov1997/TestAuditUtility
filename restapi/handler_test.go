@@ -1,9 +1,11 @@
 package restapi
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
@@ -125,5 +127,38 @@ func TestAuditHTTP(t *testing.T) {
 				t.Fatalf("body = %q, want %q", w.Body.String(), tt.want)
 			}
 		})
+	}
+}
+
+func TestAuditTooLargeBody(t *testing.T) {
+	handler, err := NewHandler(func(
+		ctx context.Context,
+		data []byte,
+		format string,
+	) ([]audit.Finding, error) {
+		t.Fatal("audit function must not be called")
+		return nil, nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	body := bytes.Repeat([]byte("a"), int(config.MaxBytes)+1)
+
+	req := httptest.NewRequest(
+		http.MethodPost,
+		"/api/v1/audit",
+		bytes.NewReader(body),
+	)
+	req.Header.Set("Content-Type", "application/json")
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusRequestEntityTooLarge {
+		t.Fatalf("status = %d, want %d",
+			rec.Code,
+			http.StatusRequestEntityTooLarge,
+		)
 	}
 }

@@ -18,10 +18,19 @@ func Parse(r io.Reader, format string) (any, error) {
 		return nil, errors.New("unsupported format")
 	}
 
-	data, err := io.ReadAll(r)
+	data, err := io.ReadAll(io.LimitReader(r, MaxBytes+1))
 	if err != nil {
 		return nil, fmt.Errorf("reading config: %w", err)
 	}
+
+	if int64(len(data)) > MaxBytes {
+		return nil, fmt.Errorf(
+			"%w: maximum %d bytes",
+			ErrConfigTooLarge,
+			MaxBytes,
+		)
+	}
+
 	data = bytes.TrimSpace(data)
 	if len(data) == 0 {
 		return nil, errors.New("empty config")
