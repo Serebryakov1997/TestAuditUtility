@@ -10,6 +10,7 @@ import (
 
 	"github.com/serebryakov1997/utility/audit"
 	"github.com/serebryakov1997/utility/config"
+	"github.com/serebryakov1997/utility/filecheck"
 )
 
 type Analyzer interface {
@@ -80,13 +81,7 @@ func (s *Scanner) Analyze(directoryPath string) ([]FileReport, error) {
 			)
 
 			if err != nil {
-				reports = append(reports, FileReport{
-					Path:     reportPath(directoryPath, path),
-					Findings: make([]audit.Finding, 0),
-					Error:    err.Error(),
-				})
-
-				return nil
+				report.Error = err.Error()
 			}
 
 			reports = append(reports, report)
@@ -108,36 +103,41 @@ func (s *Scanner) analyzeFile(
 ) (FileReport, error) {
 	fullPath := filepath.Join(rootPath, filePath)
 
+	report := FileReport{
+		Path:     reportPath(rootPath, filePath),
+		Findings: make([]audit.Finding, 0),
+	}
+
+	permissionFindings, err := filecheck.Permissions(fullPath)
+	if err != nil {
+		return report, fmt.Errorf("check file permissions: %w", err)
+	}
+
+	report.Findings = append(report.Findings, permissionFindings...)
+
 	file, err := os.Open(fullPath)
 	if err != nil {
-		return FileReport{
-			Path: reportPath(rootPath, filePath),
-		}, fmt.Errorf("open file: %w", err)
+		return report, fmt.Errorf("open file: %w", err)
 	}
 	defer file.Close()
 
 	parseConfig, err := config.Parse(file, format)
 	if err != nil {
-		return FileReport{
-			Path: reportPath(rootPath, filePath),
-		}, fmt.Errorf("parse file: %w", err)
+		return report, fmt.Errorf("parse file: %w", err)
 	}
 
 	findings, err := s.analyzer.Analyze(parseConfig)
 	if err != nil {
-		return FileReport{
-			Path: reportPath(rootPath, filePath),
-		}, fmt.Errorf("analyze file: %w", err)
+		return report, fmt.Errorf("analyze file: %w", err)
 	}
 
 	if findings == nil {
 		findings = make([]audit.Finding, 0)
 	}
 
-	return FileReport{
-		Path:     reportPath(rootPath, filePath),
-		Findings: findings,
-	}, nil
+	report.Findings = append(report.Findings, findings...)
+
+	return report, nil
 }
 
 func formatByPath(path string) (string, bool) {

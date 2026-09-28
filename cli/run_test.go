@@ -67,6 +67,96 @@ func TestRunFile(t *testing.T) {
 	}
 }
 
+func TestRunFilePermissions(t *testing.T) {
+	cases := []struct {
+		name        string
+		args        []string
+		mode        os.FileMode
+		wantCode    int
+		wantFinding bool
+	}{
+		{
+			name:        "unsafe permissions",
+			args:        nil,
+			mode:        0o666,
+			wantCode:    ExitFindings,
+			wantFinding: true,
+		},
+		{
+			name:        "unsafe permissions with silent",
+			args:        []string{"--silent"},
+			mode:        0o666,
+			wantCode:    ExitOK,
+			wantFinding: true,
+		},
+		{
+			name:        "safe permissions",
+			args:        nil,
+			mode:        0o600,
+			wantCode:    ExitOK,
+			wantFinding: false,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			path := filepath.Join(t.TempDir(), "config.json")
+
+			if err := os.WriteFile(
+				path,
+				[]byte(`{"debug":false}`),
+				0o600,
+			); err != nil {
+				t.Fatalf("WriteFile() error: %v", err)
+			}
+
+			if err := os.Chmod(path, tc.mode); err != nil {
+				t.Fatalf("Chmod() error: %v", err)
+			}
+
+			args := append([]string{}, tc.args...)
+			args = append(args, path)
+
+			var out, errOut bytes.Buffer
+
+			code := Run(
+				args,
+				strings.NewReader(""),
+				&out,
+				&errOut,
+			)
+
+			if code != tc.wantCode {
+				t.Fatalf(
+					"code = %d, want %d; stdout = %q; stderr = %q",
+					code,
+					tc.wantCode,
+					out.String(),
+					errOut.String(),
+				)
+			}
+
+			hasPermissionsFinding := strings.Contains(
+				out.String(),
+				"file-permissions",
+			)
+
+			if hasPermissionsFinding != tc.wantFinding {
+				t.Fatalf(
+					"file-permissions finding = %v, want %v; stdout = %q",
+					hasPermissionsFinding,
+					tc.wantFinding,
+					out.String(),
+				)
+			}
+
+			if errOut.Len() != 0 {
+				t.Fatalf("unexpected stderr: %q", errOut.String())
+			}
+		})
+	}
+}
+
 func TestRunMissingFile(t *testing.T) {
 	var out, errOut bytes.Buffer
 	path := filepath.Join(t.TempDir(), "missing.json")

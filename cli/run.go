@@ -7,6 +7,7 @@ import (
 
 	"github.com/serebryakov1997/utility/audit"
 	"github.com/serebryakov1997/utility/config"
+	"github.com/serebryakov1997/utility/filecheck"
 	"github.com/serebryakov1997/utility/rules"
 )
 
@@ -30,7 +31,13 @@ func Run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 
 	input := stdin
 	format := opts.format
+	var permissionFindings []audit.Finding
 	if !opts.stdin {
+		permissionFindings, err = filecheck.Permissions(opts.path)
+		if err != nil {
+			return fail(stderr, err)
+		}
+
 		file, err := os.Open(opts.path)
 		if err != nil {
 			return fail(stderr, fmt.Errorf("open file: %w", err))
@@ -49,6 +56,8 @@ func Run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	if err != nil {
 		return fail(stderr, err)
 	}
+
+	findings = append(permissionFindings, findings...)
 
 	if err := writeReport(stdout, findings); err != nil {
 		return fail(stderr, fmt.Errorf("report entry: %w", err))
