@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package audit.v1;
+
+option go_package = "github.com/serebryakov1997/utility/grpc/proto/audit/v1;auditv1;";
+
+service AuditService {
+    rpc Audit(AuditRequest) returns (AuditResponse);
+}
+
+message AuditRequest {
+    string content = 1;
+    string format = 2;
+}
+
+message AuditResponse {
+    repeated Finding findings = 1;
+}
+
+message Finding {
+    string rule_id = 1;
+    string severity = 2;
+    string path = 3;
+    string message = 4;
+    string recommendation = 5;
+}
