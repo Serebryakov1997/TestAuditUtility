@@ -11,15 +11,19 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+type Analyzer interface {
+	Analyze(config any) ([]audit.Finding, error)
+}
+
 type Handler struct {
 	auditv1.UnimplementedAuditServiceServer
 
-	analyzer audit.Analyzer
+	analyzer Analyzer
 }
 
 var _ auditv1.AuditServiceServer = (*Handler)(nil)
 
-func NewHandler(analyzer audit.Analyzer) *Handler {
+func NewHandler(analyzer Analyzer) *Handler {
 	return &Handler{analyzer: analyzer}
 }
 

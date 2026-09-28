@@ -8,7 +8,6 @@ import (
 	"net"
 	"time"
 
-	"github.com/serebryakov1997/utility/audit"
 	auditv1 "github.com/serebryakov1997/utility/grpc/proto/audit/v1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
@@ -17,7 +16,7 @@ import (
 func Run(
 	ctx context.Context,
 	address string,
-	analyzer audit.Analyzer,
+	analyzer Analyzer,
 ) error {
 	listener, err := net.Listen("tcp", address)
 	if err != nil {
