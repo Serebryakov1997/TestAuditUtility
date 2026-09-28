@@ -318,6 +318,254 @@ curl -i http://127.0.0.1:9090/api/v1/audit \
 
 Ожидается `415 Unsupported Media Type`.
 
+## gRPC API
+
+Сервис принимает JSON/YAML конфигурации и возвращает список найденных проблем.
+
+### Расположение файлов
+
+| Путь                                   | Назначение                            |
+| -------------------------------------- | ------------------------------------- |
+| `grpc/proto/audit/v1/audit.proto`      | Контракт сервиса                      |
+| `grpc/proto/audit/v1/audit.pb.go`      | Сгенерированные Go-типы сообщений     |
+| `grpc/proto/audit/v1/audit_grpc.pb.go` | Сгенерированные интерфейсы и код gRPC |
+| `grpc/api/handler.go`                  | Обработчик gRPC-запросов              |
+| `grpc/api/handler_test.go`             | Unit-тесты gRPC API                   |
+| `grpc/api/server.go`                   | Запуск и остановка сервера            |
+| `cmd/config-audit-grpc/main.go`        | Точка входа gRPC-сервера              |
+
+### Генерация Go-кода
+
+Генерация требуется после изменения `.proto` или если сгенерированные файлы отсутствуют.
+
+### Установка protoc
+
+Компилятор `protoc` необходим для генерации кода из `.proto`-файлов.
+
+**Linux (Ubuntu/Debian):**
+
+```bash
+sudo apt update
+sudo apt install -y protobuf-compiler
+```
+
+**macOS:**
+
+```bash
+brew install protobuf
+```
+
+Проверить установку:
+
+```bash
+protoc --version
+```
+
+Для генерации Go-кода дополнительно установите плагины:
+
+```bash
+go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+
+export PATH="$PATH:$(go env GOPATH)/bin"
+```
+
+В контракте используется пакет `audit.v1` и Go import path:
+
+```proto
+package audit.v1;
+
+option go_package = "github.com/serebryakov1997/utility/grpc/proto/audit/v1;auditv1";
+```
+
+Префикс Go import path должен совпадать со строкой `module` в `go.mod`.
+
+Из корня репозитория выполнить:
+
+```bash
+protoc \
+  --proto_path=grpc/proto \
+  --go_out=grpc/proto \
+  --go_opt=paths=source_relative \
+  --go-grpc_out=grpc/proto \
+  --go-grpc_opt=paths=source_relative \
+  grpc/proto/audit/v1/audit.proto
+
+go mod tidy
+```
+
+Файлы `audit.pb.go` и `audit_grpc.pb.go` создаются в одной папке с `audit.proto`.
+
+### Запуск сервера
+
+Из корневой папки:
+
+```bash
+go run ./cmd/config-audit-grpc --addr=127.0.0.1:50051
+```
+
+Или собрать и запустить отдельный бинарный файл:
+
+```bash
+go build -o audit-file-grpc ./cmd/config-audit-grpc
+./audit-file-grpc --addr=127.0.0.1:50051
+```
+
+Флаг `--addr` задаёт адрес прослушивания. По умолчанию используется `127.0.0.1:50051`. После успешного открытия порта сервер выводит сообщение:
+
+```text
+gRPC server listening on 127.0.0.1:50051
+```
+
+Для остановки нажмите Ctrl+C. Сервер ожидает завершения активных запросов до 5 секунд, затем закрывает оставшиеся соединения. При изменении исходного кода нужно перезапустить сервер или заново сгенерировать бинарный файл.
+
+### Метод и поля запроса
+
+```text
+audit.v1.AuditService/Audit
+```
+
+| Поле      | Тип      | Назначение                                                 |
+| --------- | -------- | ---------------------------------------------------------- |
+| `content` | `string` | Данные из конфигурационного файла                          |
+| `format`  | `string` | `json`, `yaml` или `auto`; пустое значение означает `auto` |
+
+В `content` передаётся содержимое документа.
+
+Ответ — сообщение `AuditResponse`. Каждая проблема содержит `rule_id`, `severity`, `path`, `message` и `recommendation`. В `grpcurl` поле `rule_id` отображается как `ruleId`.
+
+### Проверка через grpcurl
+
+#### Установка grpcurl на Linux
+
+Если Go уже установлен:
+
+```bash
+go install github.com/fullstorydev/grpcurl/cmd/grpcurl
+```
+
+Добавьте каталог с установленными двоичными файлами Go в `PATH`:
+
+```bash
+export PATH="$PATH:$(go env GOPATH)/bin"
+```
+
+Чтобы настройка сохранялась после перезапуска терминала, добавьте эту строку в `~/.bashrc` или `~/.zshrc`.
+
+Проверьте установку:
+
+```bash
+grpcurl -version
+```
+
+После установки можно проверить доступность gRPC-сервера:
+
+```bash
+grpcurl -plaintext 127.0.0.1:50051 list
+```
+
+Установка grpcurl на macOS:
+
+```bash
+brew install grpcurl
+```
+
+Сервер включает reflection, поэтому клиент может получить описание API без `.proto`:
+
+```bash
+grpcurl -plaintext 127.0.0.1:50051 list
+grpcurl -plaintext 127.0.0.1:50051 describe audit.v1.AuditService
+```
+
+Пример запроса с JSON через grpcurl:
+
+```bash
+grpcurl \
+  -plaintext \
+  -d '{"content":"{\"debug\":true}","format":"json"}' \
+  127.0.0.1:50051 \
+  audit.v1.AuditService/Audit
+```
+
+Пример структуры ответа:
+
+```json
+{
+  "findings": [
+    {
+      "ruleId": "debug-enabled",
+      "severity": "LOW",
+      "path": "$.debug",
+      "message": "Debug is enabled.",
+      "recommendation": "Disable debug in work environment"
+    }
+  ]
+}
+```
+
+Пример запроса с YAML через grpcurl:
+
+```bash
+grpcurl \
+  -plaintext \
+  -d '{"content":"debug: true\ntls:\n  enabled: false\n","format":"yaml"}' \
+  127.0.0.1:50051 \
+  audit.v1.AuditService/Audit
+```
+
+Пример запроса с указанием файла, используя `jq`:
+
+```bash
+jq -n --rawfile content config.json \
+  '{content: $content, format: "json"}' | \
+  grpcurl -plaintext -d @ \
+    127.0.0.1:50051 \
+    audit.v1.AuditService/Audit
+```
+
+### Пример запроса без найденных уязвимостей
+
+```bash
+grpcurl \
+  -plaintext \
+  -emit-defaults \
+  -d '{"content":"{\"debug\":false}","format":"json"}' \
+  127.0.0.1:50051 \
+  audit.v1.AuditService/Audit
+```
+
+Ожидаемый ответ:
+
+```json
+{
+  "findings": []
+}
+```
+
+`-emit-defaults` явно показывает пустые поля. Без данного флага будет получен ответ `{}`.
+
+### Ответы gRPC API
+
+| Код                | Причина                                      |
+| ------------------ | -------------------------------------------- |
+| `OK`               | Проверка завершена успешно                   |
+| `InvalidArgument`  | Пустая конфигурация, неподдерживаемый формат |
+| `Internal`         | Внутренняя ошибка сервера                    |
+| `Canceled`         | Запрос отменён                               |
+| `DeadlineExceeded` | Истёк срок выполнения запроса                |
+
+Пример повреждённого JSON:
+
+```bash
+grpcurl \
+  -plaintext \
+  -d '{"content":"{\"debug\":","format":"json"}' \
+  127.0.0.1:50051 \
+  audit.v1.AuditService/Audit
+```
+
+Ожидается ошибка `InvalidArgument`; список уязвимостей при возникновении ошибки в запросе не возвращается.
+
 ## Пайплайн тестирования
 
 Конфигурация пайплайна: `.github/workflows/ci.yml`.

@@ -30,7 +30,7 @@ func main() {
 
 	analyzer := audit.New(rules.RegisteredRules()...)
 
-	if err := grpcapi.Run(ctx, *address, *analyzer); err != nil {
+	if err := grpcapi.Run(ctx, *address, analyzer); err != nil {
 		log.Printf("gRPC server error: %v", err)
 		stop()
 		os.Exit(1)
