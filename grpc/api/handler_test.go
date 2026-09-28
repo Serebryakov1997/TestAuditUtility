@@ -2,6 +2,7 @@ package grpcapi
 
 import (
 	"context"
+	"strings"
 	"testing"
 	"time"
 
@@ -293,6 +294,37 @@ func TestHandlerAudit_ContextError(t *testing.T) {
 			assertAuditError(t, response, err, tt.wantCode)
 		})
 	}
+}
+
+func TestHandlerAuditTooLargeMessage(t *testing.T) {
+	handler := NewHandler(analyzerFunc(
+		func(config any) ([]audit.Finding, error) {
+			t.Fatal("Analyze() must not be called")
+			return nil, nil
+		},
+	))
+
+	const prefix = `{"data":"`
+	const suffix = `"}`
+
+	content := prefix +
+		strings.Repeat("a", int(config.MaxBytes)) +
+		suffix
+
+	response, err := handler.Audit(
+		context.Background(),
+		&auditv1.AuditRequest{
+			Content: content,
+			Format:  config.JSON,
+		},
+	)
+
+	assertAuditError(
+		t,
+		response,
+		err,
+		codes.ResourceExhausted,
+	)
 }
 
 func assertAuditError(

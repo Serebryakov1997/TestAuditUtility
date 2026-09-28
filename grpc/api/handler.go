@@ -42,6 +42,13 @@ func (h *Handler) Audit(
 		)
 	}
 
+	if int64(len(req.GetContent())) > config.MaxBytes {
+		return nil, status.Error(
+			codes.ResourceExhausted,
+			"configuration exceeds size limit",
+		)
+	}
+
 	if strings.TrimSpace(req.GetContent()) == "" {
 		return nil, status.Error(
 			codes.InvalidArgument,

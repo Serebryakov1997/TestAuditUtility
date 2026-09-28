@@ -10,6 +10,7 @@ import (
 	"net/http"
 
 	"github.com/serebryakov1997/utility/audit"
+	"github.com/serebryakov1997/utility/config"
 )
 
 var ErrInvalidConfig = errors.New("invalid configuration")
@@ -52,9 +53,27 @@ func NewHandler(auditFn AuditFunc) (http.Handler, error) {
 			return
 		}
 
+		r.Body = http.MaxBytesReader(w, r.Body, config.MaxBytes)
+		defer r.Body.Close()
+
 		data, err := io.ReadAll(r.Body)
 		if err != nil {
-			writeError(w, http.StatusBadRequest, "cannot read request body")
+			var sizeErr *http.MaxBytesError
+
+			if errors.As(err, &sizeErr) {
+				writeError(
+					w,
+					http.StatusRequestEntityTooLarge,
+					"configuration exceeds size limit",
+				)
+				return
+			}
+
+			writeError(
+				w,
+				http.StatusBadRequest,
+				"cannot read request body",
+			)
 			return
 		}
 

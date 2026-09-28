@@ -8,6 +8,7 @@ import (
 	"net"
 	"time"
 
+	"github.com/serebryakov1997/utility/config"
 	auditv1 "github.com/serebryakov1997/utility/grpc/proto/audit/v1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
@@ -26,7 +27,9 @@ func Run(
 
 	log.Printf("gRPC server listening on %s", listener.Addr())
 
-	server := grpc.NewServer()
+	server := grpc.NewServer(
+		grpc.MaxRecvMsgSize(int(config.MaxBytes)),
+	)
 
 	auditv1.RegisterAuditServiceServer(
 		server,
